@@ -21,6 +21,7 @@ from collections import OrderedDict
 
 import torch
 import torch.nn as nn
+import torchvision
 from torch.nn.functional import interpolate
 
 import models.Losses as Losses
@@ -28,6 +29,7 @@ from data import get_data_loader
 from models import update_average
 from models.Blocks import DiscriminatorTop, DiscriminatorBlock, InputBlock, GSynthesisBlock
 from models.CustomLayers import EqualizedConv2d, PixelNormLayer, EqualizedLinear, Truncation
+from torch.utils import tensorboard
 
 
 class GMapping(nn.Module):
@@ -445,6 +447,8 @@ class StyleGAN:
             # initialize the gen_shadow weights equal to the weights of gen
             self.ema_updater(self.gen_shadow, self.gen, beta=0)
 
+        self.writer = tensorboard.writer.SummaryWriter()
+
     def __setup_gen_optim(self, learning_rate, beta_1, beta_2, eps):
         self.gen_optim = torch.optim.Adam(self.gen.parameters(), lr=learning_rate, betas=(beta_1, beta_2), eps=eps)
 
@@ -568,7 +572,7 @@ class StyleGAN:
         return loss.item()
 
     @staticmethod
-    def create_grid(samples, scale_factor, img_file):
+    def create_grid(samples, scale_factor, img_file, writer=None, step=None):
         """
         utility function to create a grid of GAN samples
 
@@ -583,10 +587,13 @@ class StyleGAN:
         # upsample the image
         if scale_factor > 1:
             samples = interpolate(samples, scale_factor=scale_factor)
-
+        if writer:
+            img_grid = torchvision.utils.make_grid(samples, nrow=int(np.sqrt(len(samples))))
+            writer.add_image("generated images during training", img_grid, global_step=step)
         # save the images:
-        save_image(samples, img_file, nrow=int(np.sqrt(len(samples))),
-                   normalize=True, scale_each=True, pad_value=128, padding=1)
+        else:
+            save_image(samples, img_file, nrow=int(np.sqrt(len(samples))),
+                       normalize=True, scale_each=True, pad_value=128, padding=1)
 
     def train(self, dataset, num_workers, epochs, batch_sizes, fade_in_percentage, logger, output,
               num_samples=36, start_depth=0, feedback_factor=100, checkpoint_factor=1):
@@ -687,6 +694,8 @@ class StyleGAN:
                                 scale_factor=int(
                                     np.power(2, self.depth - current_depth - 1)) if self.structure == 'linear' else 1,
                                 img_file=gen_img_file,
+                                writer=self.writer,
+                                step=step
                             )
 
                     # increment the alpha ticker and the step

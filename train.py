@@ -56,6 +56,7 @@ if __name__ == '__main__':
     output_dir = opt.output_dir
     if os.path.exists(output_dir):
         raise KeyError("Existing path: ", output_dir)
+    print(output_dir)
     os.makedirs(output_dir)
 
     # copy codes and config file
