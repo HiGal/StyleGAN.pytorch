@@ -141,6 +141,7 @@ class GSynthesis(nn.Module):
         resolution_log2 = int(np.log2(resolution))
         assert resolution == 2 ** resolution_log2 and resolution >= 4
         self.depth = resolution_log2 - 1
+        print(self.depth)
 
         self.num_layers = resolution_log2 * 2 - 2
         self.num_styles = self.num_layers if use_styles else 1
@@ -179,7 +180,7 @@ class GSynthesis(nn.Module):
             :param alpha: value of alpha for fade-in effect
             :return: y => output
         """
-
+        print(depth, self.depth)
         assert depth < self.depth, "Requested output depth cannot be produced"
 
         if self.structure == 'fixed':

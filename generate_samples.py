@@ -59,6 +59,13 @@ def adjust_dynamic_range(data, drange_in=(-1, 1), drange_out=(0, 1)):
         data = data * scale + bias
     return torch.clamp(data, min=0, max=1)
 
+def load(model, cpk_file):
+    pretrained_dict = torch.load(cpk_file)
+    model_dict = model.state_dict()
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+    model_dict.update(pretrained_dict)
+    model.load_state_dict(model_dict)
+    return model
 
 def main(args):
     """
@@ -73,6 +80,7 @@ def main(args):
     opt.freeze()
 
     print("Creating generator object ...")
+    print(opt.model.gen)
     # create the generator object
     gen = Generator(resolution=opt.dataset.resolution,
                     num_channels=opt.dataset.channels,
@@ -81,7 +89,8 @@ def main(args):
 
     print("Loading the generator weights from:", args.generator_file)
     # load the weights into it
-    gen.load_state_dict(torch.load(args.generator_file))
+    # gen.load_state_dict(torch.load(args.generator_file))
+    gen = load(gen, args.generator_file)
 
     # path for saving the files:
     save_path = args.output_dir
