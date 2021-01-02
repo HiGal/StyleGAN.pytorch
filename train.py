@@ -26,6 +26,7 @@ def load(model, cpk_file):
     pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
     model_dict.update(pretrained_dict)
     model.load_state_dict(model_dict)
+    return model
 
 
 if __name__ == '__main__':
@@ -99,9 +100,9 @@ if __name__ == '__main__':
     # Resume training from checkpoints
     if args.generator_file is not None:
         logger.info("Loading generator from: %s", args.generator_file)
-        # style_gan.gen.load_state_dict(torch.load(args.generator_file))
+        style_gan.gen.load_state_dict(torch.load(args.generator_file))
         # Load fewer layers of pre-trained models if possible
-        load(style_gan.gen, args.generator_file)
+        # style_gan.gen = load(style_gan.gen, args.generator_file)
     else:
         logger.info("Training from scratch...")
 

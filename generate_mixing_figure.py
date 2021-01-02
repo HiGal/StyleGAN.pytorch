@@ -8,6 +8,14 @@ import torch
 from models.GAN import Generator
 from generate_grid import adjust_dynamic_range
 
+# TODO: fix for multiple layers
+def load(model, cpk_file):
+    pretrained_dict = torch.load(cpk_file)
+    model_dict = model.state_dict()
+    pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+    model_dict.update(pretrained_dict)
+    model.load_state_dict(model_dict)
+    return model
 
 def draw_style_mixing_figure(png, gen, out_depth, src_seeds, dst_seeds, style_ranges):
     n_col = len(src_seeds)
@@ -37,6 +45,8 @@ def draw_style_mixing_figure(png, gen, out_depth, src_seeds, dst_seeds, style_ra
             canvas.paste(Image.fromarray(dst_image, 'RGB'), (0, (row + 1) * h))
 
             row_dlatents = np.stack([dst_dlatents_np[row]] * n_col)
+            print(row_dlatents.shape)
+            print(style_ranges)
             row_dlatents[:, style_ranges[row]] = src_dlatents_np[:, style_ranges[row]]
             row_dlatents = torch.from_numpy(row_dlatents)
 
@@ -69,13 +79,14 @@ def main(args):
 
     print("Loading the generator weights from:", args.generator_file)
     # load the weights into it
-    gen.load_state_dict(torch.load(args.generator_file))
+    # gen.load_state_dict(torch.load(args.generator_file))
+    gen = load(gen, args.generator_file)
 
     # path for saving the files:
     # generate the images:
     # src_seeds = [639, 701, 687, 615, 1999], dst_seeds = [888, 888, 888],
     draw_style_mixing_figure(os.path.join('figure03-style-mixing.png'), gen,
-                             out_depth=6, src_seeds=[639, 1995, 687, 615, 1999], dst_seeds=[888, 888, 888],
+                             out_depth=4, src_seeds=[639, 1995, 687, 615, 1999], dst_seeds=[888, 888, 888],
                              style_ranges=[range(0, 2)] * 1 + [range(2, 8)] * 1 + [range(8, 14)] * 1)
     print('Done.')
 

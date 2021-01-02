@@ -6,6 +6,6 @@ device_id: ('3')
 dataset:
   img_dir: '/home/hzh/data/img_align_celeba'
   folder: False
-  resolution: 128
+  resolution: 64
 sched:
   epochs: [2,4,4,4,4,8]
