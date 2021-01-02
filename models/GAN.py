@@ -678,6 +678,8 @@ class StyleGAN:
                     if i % int(total_batches / feedback_factor + 1) == 0 or i == 1:
                         elapsed = time.time() - global_time
                         elapsed = str(datetime.timedelta(seconds=elapsed)).split('.')[0]
+                        self.writer.add_scalar("D_loss", dis_loss, step)
+                        self.writer.add_scalar("G_loss", gen_loss, step)
                         logger.info(
                             "Elapsed: [%s] Step: %d  Batch: %d  D_Loss: %f  G_Loss: %f"
                             % (elapsed, step, i, dis_loss, gen_loss))
