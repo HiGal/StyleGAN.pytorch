@@ -283,7 +283,7 @@ class Generator(nn.Module):
         latent_in = torch.randn(
             n_latent, self.style_dim
         )
-        latent = self.g_mapping(latent_in).mean(0, keepdim=True)
+        latent = self.g_mapping(latent_in.cuda()).mean(0, keepdim=True)
         return latent
 
 
