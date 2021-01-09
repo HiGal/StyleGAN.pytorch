@@ -141,7 +141,6 @@ class GSynthesis(nn.Module):
         resolution_log2 = int(np.log2(resolution))
         assert resolution == 2 ** resolution_log2 and resolution >= 4
         self.depth = resolution_log2 - 1
-        print(self.depth)
 
         self.num_layers = resolution_log2 * 2 - 2
         self.num_styles = self.num_layers if use_styles else 1
@@ -180,7 +179,6 @@ class GSynthesis(nn.Module):
             :param alpha: value of alpha for fade-in effect
             :return: y => output
         """
-        print(depth, self.depth)
         assert depth < self.depth, "Requested output depth cannot be produced"
 
         if self.structure == 'fixed':
@@ -230,6 +228,8 @@ class Generator(nn.Module):
 
         self.style_mixing_prob = style_mixing_prob
 
+        self.style_dim = dlatent_size
+
         # Setup components.
         self.num_layers = (int(np.log2(resolution)) - 1) * 2
         self.g_mapping = GMapping(latent_size, dlatent_size, dlatent_broadcast=self.num_layers, **kwargs)
@@ -278,6 +278,13 @@ class Generator(nn.Module):
         fake_images = self.g_synthesis(dlatents_in, depth, alpha)
 
         return fake_images
+
+    def mean_latent(self, n_latent):
+        latent_in = torch.randn(
+            n_latent, self.style_dim
+        )
+        latent = self.g_mapping(latent_in).mean(0, keepdim=True)
+        return latent
 
 
 class Discriminator(nn.Module):
