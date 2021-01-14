@@ -5,7 +5,7 @@ from torchvision.utils import save_image
 
 from mapper_network import VGG16_Perceptual
 from models.GAN import Generator
-import matplotlib.pyplot as plt
+from tqdm import tqdm
 from config import cfg as opt
 from torch import optim, nn
 import torch
@@ -79,7 +79,7 @@ def map_to_W(img_path, resolution, n_iter=1000, device="cuda:0"):
 
     map_net = VGG16_Perceptual(n_layers=[2, 4, 14, 21]).to(device)
     # (log2(resolution)-1) * 2
-    dlatent = torch.zeros((1, np.int((np.log2(resolution) - 1) * 2), 512), requires_grad=True, device=device)
+    dlatent = torch.randn((1, np.int((np.log2(resolution) - 1) * 2), 512), requires_grad=True, device=device)
     optimizer = optim.Adam({dlatent}, lr=0.01, betas=(0.9, 0.999), eps=1e-8)
 
     iterations = n_iter
@@ -109,7 +109,7 @@ def map_to_W(img_path, resolution, n_iter=1000, device="cuda:0"):
 
 if __name__ == '__main__':
     device = "cuda:0" if torch.cuda.is_available() else 'cpu'
-    opt.merge_from_file("configs/sample_ffhq_1024.yaml")
+    opt.merge_from_file("configs/sample.yaml")
     opt.freeze()
     gen = Generator(resolution=opt.dataset.resolution,
                     num_channels=opt.dataset.channels,
@@ -117,11 +117,21 @@ if __name__ == '__main__':
                     **opt.model.gen)
     # print(torch.load("weights/GAN_GEN_SHADOW_5_80.pth").keys())
     # gen.load_state_dict(torch.load("weights/GAN_GEN_SHADOW_5_80.pth"))
-    gen = load(gen, "weights/ffhq_1024_gen.pth")
+    gen = load(gen, "../weights/wikiart/GAN_GEN_SHADOW_5_80.pth")
     gen = gen.to(device)
     g_mapping, g_synthesis = gen.g_mapping, gen.g_synthesis
     resolution = opt.dataset.resolution
     n_iter = 200 if resolution == 1024 else 1000
+
+    import pandas as pd
+
+    df = pd.read_csv("../experiments/data/artemis_w_bin_emotions.csv")
+    pos_images = df[df.emotion == 1.0][:100]
+    neg_images = df[df.emotion == 0.0][:100]
+
     # for img in os.listdir("output"):
     #     map_to_W(f"output/{img}", resolution, n_iter)
-    map_to_W(f"output/9wall.jpg", resolution, n_iter=5000)
+    root = "../experiments/data/rescaled_max_size_to_600px_same_aspect_ratio"
+    for i,image in tqdm(neg_images.iterrows(), total=100):
+        path = f"{root}/{image['art_style']}/{image['painting']}.jpg"
+        map_to_W(path, resolution, n_iter=n_iter)
